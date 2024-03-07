@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/flaconi/contentful-go/pkgs/model"
-	"github.com/flaconi/contentful-go/service/common"
+	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -29,7 +29,7 @@ func NewApiKeyResource() resource.Resource {
 
 // apiKeyResource is the resource implementation.
 type apiKeyResource struct {
-	client common.SpaceIdClientBuilder
+	client cma.SpaceIdClientBuilder
 }
 
 func (e *apiKeyResource) Metadata(_ context.Context, request resource.MetadataRequest, response *resource.MetadataResponse) {

@@ -1,9 +1,12 @@
 package contenttype_test
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/flaconi/contentful-go"
+	"github.com/flaconi/contentful-go/pkgs/common"
+	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/flaconi/terraform-provider-contentful/internal/acctest"
 	"github.com/flaconi/terraform-provider-contentful/internal/provider"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
@@ -17,7 +20,7 @@ import (
 	"testing"
 )
 
-type assertFunc func(*testing.T, *contentful.ContentType)
+type assertFunc func(*testing.T, *model.ContentType)
 type assertEditorInterfaceFunc func(*testing.T, *contentful.EditorInterface)
 
 func TestContentTypeResource_Create(t *testing.T) {
@@ -37,14 +40,14 @@ func TestContentTypeResource_Create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "id", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "2"),
 					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *contentful.ContentType) {
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, 2, contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
 						assert.EqualValues(t, "none", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:           "field1",
 							Name:         "Field 1 name change",
 							Type:         "Text",
@@ -57,7 +60,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Validations:  nil,
 							DefaultValue: nil,
 						}, contentType.Fields[0])
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:           "field3",
 							Name:         "Field 3 new field",
 							Type:         "Integer",
@@ -79,14 +82,14 @@ func TestContentTypeResource_Create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "4"),
 					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *contentful.ContentType) {
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, 4, contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field1",
 							Name:      "Field 1 name change",
 							Type:      "Text",
@@ -96,7 +99,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Disabled:  false,
 							Omitted:   false,
 						}, contentType.Fields[1])
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field3",
 							Name:      "Field 3 new field",
 							Type:      "Integer",
@@ -115,14 +118,14 @@ func TestContentTypeResource_Create(t *testing.T) {
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "version", "6"),
 					resource.TestCheckResourceAttr(resourceName, "version_controls", "4"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *contentful.ContentType) {
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, 6, contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field1",
 							Name:      "Field 1 name change",
 							Type:      "Text",
@@ -132,7 +135,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Disabled:  false,
 							Omitted:   false,
 						}, contentType.Fields[0])
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field3",
 							Name:      "Field 3 new field",
 							Type:      "Integer",
@@ -164,19 +167,19 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Config: testContentTypeLinkConfig("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID"), "linked_content_type"),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(linkedResourceName, "name", "tf_linked"),
-					testAccCheckContentfulContentTypeExists(t, linkedResourceName, func(t *testing.T, contentType *contentful.ContentType) {
+					testAccCheckContentfulContentTypeExists(t, linkedResourceName, func(t *testing.T, contentType *model.ContentType) {
 						assert.EqualValues(t, "tf_linked", contentType.Name)
 						assert.Equal(t, 2, contentType.Sys.Version)
 						assert.EqualValues(t, "tf_linked", contentType.Sys.ID)
 						assert.EqualValues(t, "Terraform Acc Test Content Type with links", *contentType.Description)
 						assert.EqualValues(t, "asset_field", contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:       "asset_field",
 							Name:     "Asset Field",
 							Type:     "Array",
 							LinkType: "",
-							Items: &contentful.FieldTypeArrayItem{
+							Items: &model.FieldTypeArrayItem{
 								Type:     "Link",
 								LinkType: toPointer("Asset"),
 							},
@@ -185,7 +188,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Disabled:  false,
 							Omitted:   false,
 						}, contentType.Fields[0])
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "entry_link_field",
 							Name:      "Entry Link Field",
 							Type:      "Link",
@@ -194,8 +197,8 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Localized: false,
 							Disabled:  false,
 							Omitted:   false,
-							Validations: []contentful.FieldValidation{
-								contentful.FieldValidationLink{
+							Validations: []model.FieldValidation{
+								model.FieldValidationLink{
 									LinkContentType: []string{"tf_test1"},
 								},
 							},
@@ -208,14 +211,14 @@ func TestContentTypeResource_Create(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
 					resource.TestCheckResourceAttr(resourceName, "id", "tf_test2"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *contentful.ContentType) {
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
 						assert.EqualValues(t, "tf_test1", contentType.Name)
 						assert.Equal(t, 2, contentType.Sys.Version)
 						assert.EqualValues(t, "tf_test2", contentType.Sys.ID)
 						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
 						assert.EqualValues(t, "field1", contentType.DisplayField)
 						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field1",
 							Name:      "Field 1 name change",
 							Type:      "Text",
@@ -225,7 +228,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 							Disabled:  false,
 							Omitted:   false,
 						}, contentType.Fields[0])
-						assert.Equal(t, &contentful.Field{
+						assert.Equal(t, &model.Field{
 							ID:        "field3",
 							Name:      "Field 3 new field",
 							Type:      "Integer",
@@ -241,7 +244,116 @@ func TestContentTypeResource_Create(t *testing.T) {
 		},
 	})
 }
-func getContentTypeFromState(s *terraform.State, resourceName string) (*contentful.ContentType, error) {
+
+func TestContentTypeResource_UpdateWithDuplicateField(t *testing.T) {
+	resourceName := "contentful_contenttype.acctest_content_type"
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { acctest.TestAccPreCheck(t) },
+		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
+		ProtoV6ProviderFactories: map[string]func() (tfprotov6.ProviderServer, error){
+			"contentful": providerserver.NewProtocol6WithError(provider.New("test", false)),
+		},
+		Steps: []resource.TestStep{
+			{
+				Config: testContentType("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "id", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "version", "2"),
+					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
+						assert.EqualValues(t, "tf_test1", contentType.Name)
+						assert.Equal(t, 2, contentType.Sys.Version)
+						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
+						assert.EqualValues(t, "none", *contentType.Description)
+						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.Len(t, contentType.Fields, 2)
+						assert.Equal(t, &model.Field{
+							ID:           "field1",
+							Name:         "Field 1 name change",
+							Type:         "Text",
+							LinkType:     "",
+							Items:        nil,
+							Required:     true,
+							Localized:    false,
+							Disabled:     false,
+							Omitted:      false,
+							Validations:  nil,
+							DefaultValue: nil,
+						}, contentType.Fields[0])
+						assert.Equal(t, &model.Field{
+							ID:           "field3",
+							Name:         "Field 3 new field",
+							Type:         "Integer",
+							LinkType:     "",
+							Items:        nil,
+							Required:     true,
+							Localized:    false,
+							Disabled:     false,
+							Omitted:      false,
+							Validations:  nil,
+							DefaultValue: nil,
+						}, contentType.Fields[1])
+					}),
+				),
+			},
+
+			{
+				Config: testContentTypeUpdateDuplicateFields("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
+					resource.TestCheckResourceAttr(resourceName, "version", "6"),
+					resource.TestCheckResourceAttr(resourceName, "version_controls", "4"),
+					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
+						assert.EqualValues(t, "tf_test1", contentType.Name)
+						assert.Equal(t, 6, contentType.Sys.Version)
+						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
+						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
+						assert.EqualValues(t, "field1", contentType.DisplayField)
+						assert.Len(t, contentType.Fields, 2)
+						assert.Equal(t, &model.Field{
+							ID:        "field1",
+							Name:      "Field 1 name change",
+							Type:      "Text",
+							LinkType:  "",
+							Required:  true,
+							Localized: false,
+							Disabled:  false,
+							Omitted:   false,
+						}, contentType.Fields[0])
+						assert.Equal(t, &model.Field{
+							ID:        "field3",
+							Name:      "Field 3 new field",
+							Type:      "Integer",
+							LinkType:  "",
+							Required:  true,
+							Localized: false,
+							Disabled:  false,
+							Omitted:   false,
+						}, contentType.Fields[1])
+					}),
+					testAccCheckEditorInterfaceExists(t, "tf_test1", func(t *testing.T, editorInterface *contentful.EditorInterface) {
+						assert.Len(t, editorInterface.Controls, 2)
+						assert.Equal(t, contentful.Controls{
+							FieldID: "field1",
+						}, editorInterface.Controls[0])
+						assert.Equal(t, contentful.Controls{
+							FieldID:         "field3",
+							WidgetNameSpace: toPointer("builtin"),
+							WidgetID:        toPointer("numberEditor"),
+							Settings: &contentful.Settings{
+								BulkEditing: toPointer(true),
+								HelpText:    toPointer("blabla"),
+							},
+						}, editorInterface.Controls[1])
+					}),
+				),
+			},
+		},
+	})
+}
+
+func getContentTypeFromState(s *terraform.State, resourceName string) (*model.ContentType, error) {
 	rs, ok := s.RootModule().Resources[resourceName]
 	if !ok {
 		return nil, fmt.Errorf("content type not found")
@@ -251,9 +363,9 @@ func getContentTypeFromState(s *terraform.State, resourceName string) (*contentf
 		return nil, fmt.Errorf("no content type ID found")
 	}
 
-	client := acctest.GetClient()
+	client := acctest.GetCMA()
 
-	return client.ContentTypes.Get(os.Getenv("CONTENTFUL_SPACE_ID"), rs.Primary.ID)
+	return client.WithSpaceId(os.Getenv("CONTENTFUL_SPACE_ID")).WithEnvironment("master").ContentTypes().Get(context.Background(), rs.Primary.ID)
 }
 
 func getEditorInterfaceFromState(id string) (*contentful.EditorInterface, error) {
@@ -287,7 +399,7 @@ func testAccCheckEditorInterfaceExists(t *testing.T, id string, assertFunc asser
 }
 
 func testAccCheckContentfulContentTypeDestroy(s *terraform.State) (err error) {
-	client := acctest.GetClient()
+	client := acctest.GetCMA()
 
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type != "contentful_contenttype" {
@@ -299,8 +411,8 @@ func testAccCheckContentfulContentTypeDestroy(s *terraform.State) (err error) {
 			return fmt.Errorf("no space_id is set")
 		}
 
-		_, err := client.ContentTypes.Get(spaceID, rs.Primary.ID)
-		var notFoundError contentful.NotFoundError
+		_, err := client.WithSpaceId(spaceID).WithEnvironment("master").ContentTypes().Get(context.Background(), rs.Primary.ID)
+		var notFoundError common.NotFoundError
 		if errors.As(err, &notFoundError) {
 			return nil
 		}
@@ -338,6 +450,13 @@ func testContentTypeUpdateWithDifferentOrderOfFields(identifier string, spaceId 
 
 func testContentTypeUpdate(identifier string, spaceId string) string {
 	return utils.HCLTemplateFromPath("test_resources/update.tf", map[string]any{
+		"identifier": identifier,
+		"spaceId":    spaceId,
+	})
+}
+
+func testContentTypeUpdateDuplicateFields(identifier string, spaceId string) string {
+	return utils.HCLTemplateFromPath("test_resources/update_duplicate_field.tf", map[string]any{
 		"identifier": identifier,
 		"spaceId":    spaceId,
 	})

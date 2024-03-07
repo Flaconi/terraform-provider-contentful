@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/flaconi/contentful-go"
 	"github.com/flaconi/contentful-go/pkgs/model"
-	"github.com/flaconi/contentful-go/service/common"
+	"github.com/flaconi/contentful-go/service/cma"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
 	"github.com/hashicorp/terraform-plugin-framework-jsontypes/jsontypes"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
@@ -33,7 +33,7 @@ func NewAppInstallationResource() resource.Resource {
 
 // appInstallationResource is the resource implementation.
 type appInstallationResource struct {
-	client         common.SpaceIdClientBuilder
+	client         cma.SpaceIdClientBuilder
 	organizationId string
 }
 
