@@ -29,6 +29,7 @@ resource "contentful_contenttype" "{{ .identifier }}" {
 resource "contentful_contenttype" "{{ .linkIdentifier }}" {
   space_id = "{{ .spaceId }}"
   name          = "tf_linked"
+  environment   = "master"
   description   = "Terraform Acc Test Content Type with links"
   display_field = "asset_field"
   fields =[{

@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"github.com/flaconi/contentful-go/pkgs/model"
 	"github.com/flaconi/contentful-go/service/cma"
+	"github.com/flaconi/terraform-provider-contentful/internal/custommodifier"
 	"github.com/flaconi/terraform-provider-contentful/internal/utils"
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -81,8 +83,12 @@ func (e *apiKeyResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			},
 			"environments": schema.ListAttribute{
 				Optional:    true,
+				Computed:    true,
 				Description: "List of needed environments if not added then master is used",
 				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.List{
+					custommodifier.ListDefault([]attr.Value{types.StringValue("master")}),
+				},
 			},
 		},
 	}

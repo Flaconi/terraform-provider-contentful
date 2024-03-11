@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 	"github.com/stretchr/testify/assert"
 	"os"
+	"regexp"
 
 	"testing"
 )
@@ -245,8 +246,7 @@ func TestContentTypeResource_Create(t *testing.T) {
 	})
 }
 
-func TestContentTypeResource_UpdateWithDuplicateField(t *testing.T) {
-	resourceName := "contentful_contenttype.acctest_content_type"
+func TestContentTypeResource_WithDuplicateField(t *testing.T) {
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { acctest.TestAccPreCheck(t) },
 		CheckDestroy: testAccCheckContentfulContentTypeDestroy,
@@ -255,99 +255,9 @@ func TestContentTypeResource_UpdateWithDuplicateField(t *testing.T) {
 		},
 		Steps: []resource.TestStep{
 			{
-				Config: testContentType("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "id", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "version", "2"),
-					resource.TestCheckResourceAttr(resourceName, "version_controls", "0"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
-						assert.EqualValues(t, "tf_test1", contentType.Name)
-						assert.Equal(t, 2, contentType.Sys.Version)
-						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
-						assert.EqualValues(t, "none", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &model.Field{
-							ID:           "field1",
-							Name:         "Field 1 name change",
-							Type:         "Text",
-							LinkType:     "",
-							Items:        nil,
-							Required:     true,
-							Localized:    false,
-							Disabled:     false,
-							Omitted:      false,
-							Validations:  nil,
-							DefaultValue: nil,
-						}, contentType.Fields[0])
-						assert.Equal(t, &model.Field{
-							ID:           "field3",
-							Name:         "Field 3 new field",
-							Type:         "Integer",
-							LinkType:     "",
-							Items:        nil,
-							Required:     true,
-							Localized:    false,
-							Disabled:     false,
-							Omitted:      false,
-							Validations:  nil,
-							DefaultValue: nil,
-						}, contentType.Fields[1])
-					}),
-				),
-			},
-
-			{
-				Config: testContentTypeUpdateDuplicateFields("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
-				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", "tf_test1"),
-					resource.TestCheckResourceAttr(resourceName, "version", "6"),
-					resource.TestCheckResourceAttr(resourceName, "version_controls", "4"),
-					testAccCheckContentfulContentTypeExists(t, resourceName, func(t *testing.T, contentType *model.ContentType) {
-						assert.EqualValues(t, "tf_test1", contentType.Name)
-						assert.Equal(t, 6, contentType.Sys.Version)
-						assert.EqualValues(t, "tf_test1", contentType.Sys.ID)
-						assert.EqualValues(t, "Terraform Acc Test Content Type description change", *contentType.Description)
-						assert.EqualValues(t, "field1", contentType.DisplayField)
-						assert.Len(t, contentType.Fields, 2)
-						assert.Equal(t, &model.Field{
-							ID:        "field1",
-							Name:      "Field 1 name change",
-							Type:      "Text",
-							LinkType:  "",
-							Required:  true,
-							Localized: false,
-							Disabled:  false,
-							Omitted:   false,
-						}, contentType.Fields[0])
-						assert.Equal(t, &model.Field{
-							ID:        "field3",
-							Name:      "Field 3 new field",
-							Type:      "Integer",
-							LinkType:  "",
-							Required:  true,
-							Localized: false,
-							Disabled:  false,
-							Omitted:   false,
-						}, contentType.Fields[1])
-					}),
-					testAccCheckEditorInterfaceExists(t, "tf_test1", func(t *testing.T, editorInterface *contentful.EditorInterface) {
-						assert.Len(t, editorInterface.Controls, 2)
-						assert.Equal(t, contentful.Controls{
-							FieldID: "field1",
-						}, editorInterface.Controls[0])
-						assert.Equal(t, contentful.Controls{
-							FieldID:         "field3",
-							WidgetNameSpace: toPointer("builtin"),
-							WidgetID:        toPointer("numberEditor"),
-							Settings: &contentful.Settings{
-								BulkEditing: toPointer(true),
-								HelpText:    toPointer("blabla"),
-							},
-						}, editorInterface.Controls[1])
-					}),
-				),
+				Config:      testContentTypeDuplicateFields("acctest_content_type", os.Getenv("CONTENTFUL_SPACE_ID")),
+				PlanOnly:    true,
+				ExpectError: regexp.MustCompile("Error: Duplicate List Value"),
 			},
 		},
 	})
@@ -455,7 +365,7 @@ func testContentTypeUpdate(identifier string, spaceId string) string {
 	})
 }
 
-func testContentTypeUpdateDuplicateFields(identifier string, spaceId string) string {
+func testContentTypeDuplicateFields(identifier string, spaceId string) string {
 	return utils.HCLTemplateFromPath("test_resources/update_duplicate_field.tf", map[string]any{
 		"identifier": identifier,
 		"spaceId":    spaceId,
